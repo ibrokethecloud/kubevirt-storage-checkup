@@ -35,6 +35,7 @@ Cluster admin should create the following cluster-reader permissions for dedicat
 |spec.param.storageClass|Optional storage class to be used instead of the default one|False||
 |spec.param.vmiTimeout|Optional timeout for VMI operations|False|Default is 3m|
 |spec.param.numOfVMs|Optional number of concurrent VMs to boot|False|Default is 10|
+|spec.param.imageDisplayName|Required: Image name as reported in Harvester UI|True||
 |spec.param.skipTeardown|Controls whether the teardown steps should be skipped after checkup completion|False|Available modes: `always`, `onfailure`, `never`. Default is `never`|
 
 

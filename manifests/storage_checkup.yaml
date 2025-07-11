@@ -3,15 +3,19 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: storage-checkup-config
-  namespace: $CHECKUP_NAMESPACE
+  namespace: default
 data:
   spec.timeout: 10m
+  spec.param.storageClass: lvm-sc-immediate #storage class volume binding mode needs to be immediate else pvc checks will fail
+  spec.param.numOfVMs: "2"
+  spec.param.skipTeardown: "onfailure"
+  spec.param.imageDisplayName: "opensuse-lvm"
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: storage-checkup
-  namespace: $CHECKUP_NAMESPACE
+  namespace: default
 spec:
   backoffLimit: 0
   template:
@@ -20,10 +24,10 @@ spec:
       restartPolicy: Never
       containers:
         - name: storage-checkup
-          image: quay.io/kiagnose/kubevirt-storage-checkup:main
+          image: gmehta3/kubevirt-storage-checkup:dev
           imagePullPolicy: Always
           env:
             - name: CONFIGMAP_NAMESPACE
-              value: $CHECKUP_NAMESPACE
+              value: default
             - name: CONFIGMAP_NAME
               value: storage-checkup-config

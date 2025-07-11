@@ -10,7 +10,7 @@ metadata:
   name: storage-checkup-role
 rules:
   - apiGroups: [ "" ]
-    resources: [ "configmaps" ]
+    resources: [ "configmaps","pods"]
     verbs: ["get", "update"]
   - apiGroups: [ "kubevirt.io" ]
     resources: [ "virtualmachines" ]
@@ -27,14 +27,39 @@ rules:
   - apiGroups: [ "cdi.kubevirt.io" ]
     resources: [ "datavolumes" ]
     verbs: [ "create", "delete" ]
+  - apiGroups: [ "cdi.kubevirt.io" ]
+    resources: [ "cdis" ]
+    verbs: [ "get", "list", "watch" ]    
   - apiGroups: [ "" ]
     resources: [ "persistentvolumeclaims" ]
-    verbs: [ "delete" ]
+    verbs: [ "delete", "get", "list" ]
+  - apiGroups: [ "harvesterhci.io" ]
+    resources: [ "virtualmachineimages" ]
+    verbs: [ "list" ]    
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: storage-checkup-cluster-role
+rules:
+  - apiGroups: [ "cdi.kubevirt.io" ]
+    resources: [ "cdis","dataimportcrons" ]
+    verbs: [ "get", "list", "watch" ]
+  - apiGroups: [ "storage.k8s.io" ]
+    resources: [ "storageclasses" ]
+    verbs: [ "get", "list", "watch" ]
+  - apiGroups: [ "snapshot.storage.k8s.io" ]
+    resources: [ "volumesnapshotclasses" ]
+    verbs: [ "get", "list", "watch" ]  
+  - apiGroups: [ "" ]
+    resources: [ "namespaces", "nodes" ]
+    verbs: [ "get", "list", "watch" ]                  
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: storage-checkup-role
+  namespace: default
 subjects:
   - kind: ServiceAccount
     name: storage-checkup-sa
@@ -42,3 +67,16 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: storage-checkup-role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: storage-checkup-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: storage-checkup-sa
+    namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: storage-checkup-cluster-role

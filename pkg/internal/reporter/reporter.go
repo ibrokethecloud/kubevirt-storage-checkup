@@ -28,8 +28,6 @@ import (
 )
 
 const (
-	OCPVersionKey                                = "ocpVersion"
-	CNVVersionKey                                = "cnvVersion"
 	DefaultStorageClassKey                       = "defaultStorageClass"
 	PVCBoundKey                                  = "pvcBound"
 	StorageProfilesWithEmptyClaimPropertySetsKey = "storageProfilesWithEmptyClaimPropertySets"
@@ -46,6 +44,7 @@ const (
 	VMLiveMigrationKey                           = "vmLiveMigration"
 	VMHotplugVolumeKey                           = "vmHotplugVolume"
 	ConcurrentVMBootKey                          = "concurrentVMBoot"
+	HarvesterVersion                             = "harvesterVersion"
 )
 
 type Reporter struct {
@@ -77,8 +76,7 @@ func FormatResults(checkupResults status.Results) map[string]string {
 	}
 
 	formattedResults := map[string]string{
-		OCPVersionKey:          checkupResults.OCPVersion,
-		CNVVersionKey:          checkupResults.CNVVersion,
+		HarvesterVersion:       checkupResults.HarvesterVersion,
 		DefaultStorageClassKey: checkupResults.DefaultStorageClass,
 		PVCBoundKey:            checkupResults.PVCBound,
 		StorageProfilesWithEmptyClaimPropertySetsKey: checkupResults.StorageProfilesWithEmptyClaimPropertySets,

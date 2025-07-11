@@ -24,8 +24,7 @@ import (
 )
 
 type Results struct {
-	OCPVersion                                string
-	CNVVersion                                string
+	HarvesterVersion                          string
 	DefaultStorageClass                       string
 	PVCBound                                  string
 	StorageProfilesWithEmptyClaimPropertySets string

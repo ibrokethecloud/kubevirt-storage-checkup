@@ -61,8 +61,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 		checkupStatus.FailureReason = []string{}
 		checkupStatus.CompletionTimestamp = time.Now()
 		checkupStatus.Results = status.Results{
-			OCPVersion:          "1.2.3",
-			CNVVersion:          "4.5.6",
+			HarvesterVersion:    "dev",
 			DefaultStorageClass: "test_sc",
 			PVCBound:            "ok",
 			StorageProfilesWithEmptyClaimPropertySets: "sc1, sc2",
@@ -87,8 +86,7 @@ func TestReportShouldSuccessfullyReportResults(t *testing.T) {
 			"status.failureReason":                                    "",
 			"status.startTimestamp":                                   timestamp(checkupStatus.StartTimestamp),
 			"status.completionTimestamp":                              timestamp(checkupStatus.CompletionTimestamp),
-			"status.result.ocpVersion":                                checkupStatus.Results.OCPVersion,
-			"status.result.cnvVersion":                                checkupStatus.Results.CNVVersion,
+			"status.result.harvesterVersion":                          checkupStatus.Results.HarvesterVersion,
 			"status.result.defaultStorageClass":                       checkupStatus.Results.DefaultStorageClass,
 			"status.result.pvcBound":                                  checkupStatus.Results.PVCBound,
 			"status.result.storageProfilesWithEmptyClaimPropertySets": checkupStatus.Results.StorageProfilesWithEmptyClaimPropertySets,

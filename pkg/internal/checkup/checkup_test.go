@@ -26,7 +26,6 @@ import (
 	"testing"
 
 	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	configv1 "github.com/openshift/api/config/v1"
 	assert "github.com/stretchr/testify/require"
 
 	corev1 "k8s.io/api/core/v1"
@@ -50,15 +49,15 @@ const (
 )
 
 var (
-	testVMIName    = "test-vmi"
-	testScName     = "test-sc"
-	testScName2    = "test-sc2"
-	efsSc          = "efs.csi.aws.com"
-	testDIC        = "test-dic"
-	testPodName    = "test-pod"
-	testPodUID     = "test-uid"
-	testOCPVersion = "1.2.3"
-	testCNVVersion = "4.5.6"
+	testVMIName          = "test-vmi"
+	testScName           = "test-sc"
+	testScName2          = "test-sc2"
+	efsSc                = "efs.csi.aws.com"
+	testDIC              = "test-dic"
+	testPodName          = "test-pod"
+	testPodUID           = "test-uid"
+	testHarvesterVersion = "dev"
+	testCNVVersion       = "4.5.6"
 )
 
 func TestCheckupShouldSucceed(t *testing.T) {
@@ -164,7 +163,7 @@ var tests = map[string]struct {
 			reporter.VMBootFromGoldenImageKey: checkup.MessageSkipNoGoldenImage,
 			reporter.ConcurrentVMBootKey:      checkup.MessageSkipNoGoldenImage,
 		},
-		expectedErr: checkup.ErrGoldenImageNoDataSource,
+		expectedErr: checkup.ErrGoldenImageNotFound,
 	},
 	"vmisWithUnsetEfsSC": {
 		clientConfig:    clientConfig{unsetEfsStorageClass: true},
@@ -254,8 +253,7 @@ func expectedResultsNoVMI(expectedResults map[string]string) {
 // FIXME: fill relevant results
 func successfulRunResults(vmiUnderTestName string) map[string]string {
 	return map[string]string{
-		reporter.OCPVersionKey:                                testOCPVersion,
-		reporter.CNVVersionKey:                                testCNVVersion,
+		reporter.HarvesterVersion:                             testHarvesterVersion,
 		reporter.DefaultStorageClassKey:                       testScName,
 		reporter.PVCBoundKey:                                  "PVC \"checkup-pvc\" bound",
 		reporter.StorageProfilesWithEmptyClaimPropertySetsKey: "",
@@ -749,27 +747,8 @@ func (cs *clientStub) GetDataSource(ctx context.Context, namespace, name string)
 	return das, nil
 }
 
-func (cs *clientStub) GetClusterVersion(ctx context.Context, name string) (*configv1.ClusterVersion, error) {
-	ver := &configv1.ClusterVersion{
-		Status: configv1.ClusterVersionStatus{
-			History: []configv1.UpdateHistory{
-				{
-					State:   configv1.PartialUpdate,
-					Version: "partial-version",
-				},
-				{
-					State:   configv1.CompletedUpdate,
-					Version: testOCPVersion,
-				},
-				{
-					State:   configv1.CompletedUpdate,
-					Version: "old-version",
-				},
-			},
-		},
-	}
-
-	return ver, nil
+func (cs *clientStub) GetClusterVersion(ctx context.Context) (string, error) {
+	return "dev", nil
 }
 
 func (cs *clientStub) ListCDIs(ctx context.Context) (*cdiv1.CDIList, error) {
@@ -807,4 +786,8 @@ func newTestConfig() config.Config {
 
 func objectFullName(namespace, name string) string {
 	return fmt.Sprintf("%s/%s", namespace, name)
+}
+
+func (cs *clientStub) CheckGoldenImage(ctx context.Context, imageName, namespace string) (string, error) {
+	return "dummyImage", nil
 }

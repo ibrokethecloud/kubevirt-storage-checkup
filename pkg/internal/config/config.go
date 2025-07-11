@@ -37,6 +37,7 @@ const (
 	VMITimeoutParamName   = "vmiTimeout"
 	NumOfVMsParamName     = "numOfVMs"
 	SkipTeardownParamName = "skipTeardown"
+	ImageDisplayName      = "imageDisplayName"
 )
 
 // SkipTeardownMode defines the possible modes for skipping teardown.
@@ -57,15 +58,17 @@ var (
 	ErrInvalidVMITimeout       = errors.New("invalid VMI timeout")
 	ErrInvalidNumOfVMs         = errors.New("invalid number of VMIs")
 	ErrInvalidSkipTeardownMode = errors.New("invalid skip teardown mode")
+	ErrNoImageDisplayName      = errors.New("no image display name provided")
 )
 
 type Config struct {
-	PodName      string
-	PodUID       string
-	StorageClass string
-	VMITimeout   time.Duration
-	NumOfVMs     int
-	SkipTeardown SkipTeardownMode
+	PodName          string
+	PodUID           string
+	StorageClass     string
+	ImageDisplayName string
+	VMITimeout       time.Duration
+	NumOfVMs         int
+	SkipTeardown     SkipTeardownMode
 }
 
 func New(baseConfig kconfig.Config) (Config, error) {
@@ -99,6 +102,13 @@ func setOptionalParams(baseConfig kconfig.Config, newConfig Config) (Config, err
 			return Config{}, ErrInvalidNumOfVMs
 		}
 		newConfig.NumOfVMs = numOfVMs
+	}
+
+	// check if an imageDisplayName is provided else abort check and error out
+	if imageDisplayName, exists := baseConfig.Params[ImageDisplayName]; exists {
+		newConfig.ImageDisplayName = imageDisplayName
+	} else {
+		return Config{}, ErrNoImageDisplayName
 	}
 
 	if rawVal, exists := baseConfig.Params[SkipTeardownParamName]; exists && rawVal != "" {

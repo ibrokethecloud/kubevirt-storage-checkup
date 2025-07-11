@@ -21,6 +21,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -28,9 +29,9 @@ import (
 	"k8s.io/client-go/rest"
 
 	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v4/apis/volumesnapshot/v1"
-	configv1 "github.com/openshift/api/config/v1"
-	configv1client "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
 
+	"github.com/harvester/harvester/pkg/apis/harvesterhci.io/v1beta1"
+	harvesterhciv1beta1 "github.com/harvester/harvester/pkg/generated/clientset/versioned/typed/harvesterhci.io/v1beta1"
 	kvcorev1 "kubevirt.io/api/core/v1"
 	"kubevirt.io/client-go/kubecli"
 	cdiv1 "kubevirt.io/containerized-data-importer-api/pkg/apis/core/v1beta1"
@@ -38,7 +39,7 @@ import (
 
 type Client struct {
 	kubecli.KubevirtClient
-	configv1client.ClusterVersionsGetter
+	harvesterhciv1beta1.HarvesterhciV1beta1Interface
 }
 
 func New() (*Client, error) {
@@ -52,30 +53,31 @@ func New() (*Client, error) {
 		return nil, err
 	}
 
-	oClient, err := configv1client.NewForConfig(config)
+	hvClient, err := harvesterhciv1beta1.NewForConfig(config)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{client, oClient}, nil
+	return &Client{client, hvClient}, nil
 }
 
 func (c *Client) CreateVirtualMachine(ctx context.Context, namespace string, vm *kvcorev1.VirtualMachine) (
 	*kvcorev1.VirtualMachine, error) {
-	return c.VirtualMachine(namespace).Create(ctx, vm)
+	return c.VirtualMachine(namespace).Create(ctx, vm, metav1.CreateOptions{})
 }
 
 func (c *Client) DeleteVirtualMachine(ctx context.Context, namespace, name string) error {
-	return c.VirtualMachine(namespace).Delete(ctx, name, &metav1.DeleteOptions{})
+	return c.VirtualMachine(namespace).Delete(ctx, name, metav1.DeleteOptions{})
 }
 
 func (c *Client) GetVirtualMachineInstance(ctx context.Context, namespace, name string) (*kvcorev1.VirtualMachineInstance, error) {
-	return c.VirtualMachineInstance(namespace).Get(ctx, name, &metav1.GetOptions{})
+	return c.VirtualMachineInstance(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
 func (c *Client) CreateVirtualMachineInstanceMigration(ctx context.Context, namespace string,
 	vmim *kvcorev1.VirtualMachineInstanceMigration) (*kvcorev1.VirtualMachineInstanceMigration, error) {
-	return c.VirtualMachineInstanceMigration(namespace).Create(vmim, &metav1.CreateOptions{})
+	return c.VirtualMachineInstanceMigration(namespace).Create(ctx, vmim, metav1.CreateOptions{})
 }
 
 func (c *Client) AddVirtualMachineInstanceVolume(ctx context.Context, namespace, name string,
@@ -125,7 +127,7 @@ func (c *Client) ListDataImportCrons(ctx context.Context, namespace string) (*cd
 }
 
 func (c *Client) ListVirtualMachinesInstances(ctx context.Context, namespace string) (*kvcorev1.VirtualMachineInstanceList, error) {
-	return c.VirtualMachineInstance(namespace).List(ctx, &metav1.ListOptions{})
+	return c.VirtualMachineInstance(namespace).List(ctx, metav1.ListOptions{})
 }
 
 func (c *Client) ListCDIs(ctx context.Context) (*cdiv1.CDIList, error) {
@@ -156,6 +158,27 @@ func (c *Client) GetDataSource(ctx context.Context, namespace, name string) (*cd
 	return c.CdiClient().CdiV1beta1().DataSources(namespace).Get(ctx, name, metav1.GetOptions{})
 }
 
-func (c *Client) GetClusterVersion(ctx context.Context, name string) (*configv1.ClusterVersion, error) {
-	return c.ClusterVersions().Get(ctx, name, metav1.GetOptions{})
+func (c *Client) GetClusterVersion(ctx context.Context) (string, error) {
+	s, err := c.Settings().Get(ctx, "server-version", metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	return s.Value, nil
+}
+
+func (c *Client) CheckGoldenImage(ctx context.Context, imageDisplayName string, namespace string) (string, error) {
+	imageList, err := c.VirtualMachineImages(namespace).List(ctx, metav1.ListOptions{})
+	if err != nil {
+		return "", fmt.Errorf("unable to list vmimages in namespace %s: %w", namespace, err)
+	}
+	for _, v := range imageList.Items {
+		if v.Spec.DisplayName == imageDisplayName {
+			if v.Spec.Backend == v1beta1.VMIBackendBackingImage {
+				return "", fmt.Errorf("Image with display name %s is of type: %s, and cannot be used with cdi", imageDisplayName, v1beta1.VMIBackendBackingImage)
+			}
+			return v.Name, nil
+		}
+	}
+
+	return "", fmt.Errorf("Image with display name %s not found in namespace: %s", imageDisplayName, namespace)
 }
