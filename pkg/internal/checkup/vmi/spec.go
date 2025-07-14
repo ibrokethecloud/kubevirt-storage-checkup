@@ -43,7 +43,31 @@ func NewVM(name string, options ...Option) *kvcorev1.VirtualMachine {
 		},
 		Spec: kvcorev1.VirtualMachineSpec{
 			RunStrategy: Pointer(kvcorev1.RunStrategyAlways),
-			Template:    &kvcorev1.VirtualMachineInstanceTemplateSpec{},
+			Template: &kvcorev1.VirtualMachineInstanceTemplateSpec{
+				Spec: kvcorev1.VirtualMachineInstanceSpec{
+					Domain: kvcorev1.DomainSpec{
+						Devices: kvcorev1.Devices{
+							Interfaces: []kvcorev1.Interface{
+								{
+									Name:  "default",
+									Model: "virtio",
+									InterfaceBindingMethod: kvcorev1.InterfaceBindingMethod{
+										Masquerade: &kvcorev1.InterfaceMasquerade{},
+									},
+								},
+							},
+						},
+					},
+					Networks: []kvcorev1.Network{
+						{
+							Name: "default",
+							NetworkSource: kvcorev1.NetworkSource{
+								Pod: &kvcorev1.PodNetwork{},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 

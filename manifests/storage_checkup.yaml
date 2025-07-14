@@ -6,10 +6,10 @@ metadata:
   namespace: default
 data:
   spec.timeout: 10m
-  spec.param.storageClass: lvm-sc-immediate #storage class volume binding mode needs to be immediate else pvc checks will fail
+  spec.param.storageClass: 	lh-v2-engine #storage class volume binding mode needs to be immediate else pvc checks will fail
   spec.param.numOfVMs: "2"
   spec.param.skipTeardown: "onfailure"
-  spec.param.imageDisplayName: "opensuse-lvm"
+  spec.param.imageDisplayName: "opensuse-lh-v2"
 ---
 apiVersion: batch/v1
 kind: Job
